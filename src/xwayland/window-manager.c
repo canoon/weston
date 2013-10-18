@@ -660,6 +660,20 @@ weston_wm_kill_client(struct wl_listener *listener, void *data)
 		kill(window->pid, SIGKILL);
 }
 
+struct weston_wm_window *
+weston_wm_window_get_framed_parent(struct weston_wm_window *window)
+{
+	struct weston_wm_window *framed_window = window;
+	while (!framed_window->frame && framed_window->transient_for) {
+		framed_window = framed_window->transient_for;
+	}
+	if (framed_window->frame) {
+		return framed_window;
+	} else {
+		return NULL;
+	}
+}
+
 static void
 weston_wm_window_activate(struct wl_listener *listener, void *data)
 {
@@ -695,13 +709,23 @@ weston_wm_window_activate(struct wl_listener *listener, void *data)
 	}
 
 	if (wm->focus_window) {
-		frame_unset_flag(wm->focus_window->frame, FRAME_FLAG_ACTIVE);
-		weston_wm_window_schedule_repaint(wm->focus_window);
+		struct weston_wm_window *action_window = weston_wm_window_get_framed_parent(wm->focus_window);
+		if (action_window) {
+			frame_unset_flag(action_window->frame, FRAME_FLAG_ACTIVE);
+			weston_wm_window_schedule_repaint(action_window);
+		} else {
+			wm_log("window has no frame??\n");
+		}
 	}
 	wm->focus_window = window;
 	if (wm->focus_window) {
-		frame_set_flag(wm->focus_window->frame, FRAME_FLAG_ACTIVE);
-		weston_wm_window_schedule_repaint(wm->focus_window);
+		struct weston_wm_window *action_window = weston_wm_window_get_framed_parent(wm->focus_window);
+		if (action_window) {
+			frame_set_flag(action_window->frame, FRAME_FLAG_ACTIVE);
+			weston_wm_window_schedule_repaint(action_window);
+		} else {
+			wm_log("window has no frame??\n");
+		}
 	}
 }
 
