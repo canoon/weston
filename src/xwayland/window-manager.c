@@ -2028,6 +2028,7 @@ surface_destroy(struct wl_listener *listener, void *data)
        Don't try to use it later. */
 	window->shsurf = NULL;
 	window->surface = NULL;
+	window->view = NULL;
 }
 
 static struct weston_wm_window *
@@ -2241,16 +2242,21 @@ xserver_set_window_id(struct wl_client *client, struct wl_resource *resource,
 	/* A weston_wm_window may have many different surfaces assigned
 	 * throughout its life, so we must make sure to remove the listener
 	 * from the old surface signal list. */
-	if (window->surface)
+	if (window->surface) {
 		wl_list_remove(&window->surface_destroy_listener.link);
+		/* Set these to NULL so if xserver_map_shell_surface doesn't
+		 * set them they won't be used */
+		window->shsurf = NULL;
+		window->view = NULL;
+	}
 
 	window->surface = (struct weston_surface *) surface;
 	window->surface_destroy_listener.notify = surface_destroy;
 	wl_signal_add(&surface->destroy_signal,
 		      &window->surface_destroy_listener);
 
-	weston_wm_window_schedule_repaint(window);
 	xserver_map_shell_surface(wm, window);
+	weston_wm_window_schedule_repaint(window);
 }
 
 const struct xserver_interface xserver_implementation = {
