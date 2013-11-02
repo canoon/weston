@@ -5,7 +5,9 @@
 *.o
 *.pc
 *.so
-*.swp
+.sw?
+.*.sw?
+*.log
 *~
 ctags
 cscope.out
