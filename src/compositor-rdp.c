@@ -523,8 +523,8 @@ rdp_restore(struct weston_compositor *ec)
 static void
 rdp_destroy(struct weston_compositor *ec)
 {
-	ec->renderer->destroy(ec);
 	weston_compositor_shutdown(ec);
+	ec->renderer->destroy(ec);
 
 	free(ec);
 }

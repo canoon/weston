@@ -715,9 +715,9 @@ wayland_destroy(struct weston_compositor *ec)
 {
 	struct wayland_compositor *c = (struct wayland_compositor *) ec;
 
-	ec->renderer->destroy(ec);
-
 	weston_compositor_shutdown(ec);
+
+	ec->renderer->destroy(ec);
 
 	if (c->parent.shm)
 		wl_shm_destroy(c->parent.shm);

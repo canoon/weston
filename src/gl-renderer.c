@@ -1630,8 +1630,8 @@ gl_renderer_destroy(struct weston_compositor *ec)
 	wl_array_release(&gr->indices);
 	wl_array_release(&gr->vtxcnt);
 
-	weston_binding_destroy(gr->fragment_binding);
-	weston_binding_destroy(gr->fan_binding);
+	/* We would normally remove the bindings here but they should have
+	 * already been removed when the compositor shutdown */
 
 	free(gr);
 }
