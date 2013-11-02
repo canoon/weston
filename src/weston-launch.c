@@ -600,7 +600,7 @@ drop_privileges(struct weston_launch *wl)
 }
 
 static void
-launch_compositor(struct weston_launch *wl, int argc, char *argv[])
+launch_compositor(struct weston_launch *wl, char *weston, int argc, char *argv[])
 {
 	char *child_argv[MAX_ARGV_SIZE];
 	sigset_t mask;
@@ -629,11 +629,12 @@ launch_compositor(struct weston_launch *wl, int argc, char *argv[])
 	child_argv[0] = "/bin/sh";
 	child_argv[1] = "-l";
 	child_argv[2] = "-c";
-	child_argv[3] = BINDIR "/weston \"$@\"";
-	child_argv[4] = "weston";
+	child_argv[3] = "\"$@\"";
+	child_argv[4] = weston;
+	child_argv[5] = weston;
 	for (i = 0; i < argc; ++i)
-		child_argv[5 + i] = argv[i];
-	child_argv[5 + i] = NULL;
+		child_argv[6 + i] = argv[i];
+	child_argv[6 + i] = NULL;
 
 	execv(child_argv[0], child_argv);
 	error(1, errno, "exec failed");
@@ -645,6 +646,7 @@ help(const char *name)
 	fprintf(stderr, "Usage: %s [args...] [-- [weston args..]]\n", name);
 	fprintf(stderr, "  -u, --user      Start session as specified username\n");
 	fprintf(stderr, "  -t, --tty       Start session on alternative tty\n");
+	fprintf(stderr, "  -e, --exec      Start the specified program instead of weston\n");
 	fprintf(stderr, "  -v, --verbose   Be verbose\n");
 	fprintf(stderr, "  -h, --help      Display this help message\n");
 }
@@ -655,9 +657,11 @@ main(int argc, char *argv[])
 	struct weston_launch wl;
 	int i, c;
 	char *tty = NULL;
+	char *weston = BINDIR "/weston";
 	struct option opts[] = {
 		{ "user",    required_argument, NULL, 'u' },
 		{ "tty",     required_argument, NULL, 't' },
+		{ "exec",    required_argument, NULL, 'e' }, 
 		{ "verbose", no_argument,       NULL, 'v' },
 		{ "help",    no_argument,       NULL, 'h' },
 		{ 0,         0,                 NULL,  0  }
@@ -665,7 +669,7 @@ main(int argc, char *argv[])
 
 	memset(&wl, 0, sizeof wl);
 
-	while ((c = getopt_long(argc, argv, "u:t::vh", opts, &i)) != -1) {
+	while ((c = getopt_long(argc, argv, "u:t:e:vh", opts, &i)) != -1) {
 		switch (c) {
 		case 'u':
 			wl.new_user = optarg;
@@ -674,6 +678,9 @@ main(int argc, char *argv[])
 			break;
 		case 't':
 			tty = optarg;
+			break;
+		case 'e':
+			weston = optarg;
 			break;
 		case 'v':
 			wl.verbose = 1;
@@ -684,7 +691,7 @@ main(int argc, char *argv[])
 		}
 	}
 
-	if ((argc - optind) > (MAX_ARGV_SIZE - 6))
+	if ((argc - optind) > (MAX_ARGV_SIZE - 7))
 		error(1, E2BIG, "Too many arguments to pass to weston");
 
 	if (wl.new_user)
@@ -722,7 +729,7 @@ main(int argc, char *argv[])
 	}
 
 	if (wl.child == 0)
-		launch_compositor(&wl, argc - optind, argv + optind);
+		launch_compositor(&wl, weston, argc - optind, argv + optind);
 
 	close(wl.sock[1]);
 	if (wl.tty != STDIN_FILENO)
