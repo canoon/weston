@@ -109,7 +109,6 @@ struct desktop_shell {
 	struct weston_layer lock_layer;
 	struct weston_layer input_panel_layer;
 
-	struct wl_listener pointer_focus_listener;
 	struct weston_surface *grab_surface;
 
 	struct {
@@ -279,6 +278,7 @@ struct rotate_grab {
 struct shell_seat {
 	struct weston_seat *seat;
 	struct wl_listener seat_destroy_listener;
+	struct wl_listener pointer_focus_listener;
 
 	struct {
 		struct weston_pointer_grab grab;
@@ -1658,19 +1658,6 @@ handle_pointer_focus(struct wl_listener *listener, void *data)
 }
 
 static void
-create_pointer_focus_listener(struct weston_seat *seat)
-{
-	struct wl_listener *listener;
-
-	if (!seat->pointer)
-		return;
-
-	listener = malloc(sizeof *listener);
-	listener->notify = handle_pointer_focus;
-	wl_signal_add(&seat->pointer->focus_signal, listener);
-}
-
-static void
 shell_surface_pong(struct wl_client *client, struct wl_resource *resource,
 							uint32_t serial)
 {
@@ -2208,6 +2195,11 @@ destroy_shell_seat(struct wl_listener *listener, void *data)
 	}
 
 	wl_list_remove(&shseat->seat_destroy_listener.link);
+
+	if (shseat->pointer_focus_listener.notify != NULL) {
+		wl_list_remove(&shseat->pointer_focus_listener.link);
+	}
+
 	free(shseat);
 }
 
@@ -2228,6 +2220,13 @@ create_shell_seat(struct weston_seat *seat)
 	shseat->seat_destroy_listener.notify = destroy_shell_seat;
 	wl_signal_add(&seat->destroy_signal,
 	              &shseat->seat_destroy_listener);
+
+	if (seat->pointer) {
+		shseat->pointer_focus_listener.notify = handle_pointer_focus;
+		wl_signal_add(&seat->pointer->focus_signal, &shseat->pointer_focus_listener);
+	} else {
+		shseat->pointer_focus_listener.notify = NULL;
+	}
 
 	return shseat;
 }
@@ -4981,7 +4980,7 @@ module_init(struct weston_compositor *ec,
 		wl_event_loop_add_timer(loop, screensaver_timeout, shell);
 
 	wl_list_for_each(seat, &ec->seat_list, link)
-		create_pointer_focus_listener(seat);
+	create_shell_seat(seat);
 
 	shell_add_bindings(ec, shell);
 

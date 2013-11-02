@@ -1958,6 +1958,8 @@ weston_seat_release(struct weston_seat *seat)
 	}
 #endif
 
+	wl_signal_emit(&seat->destroy_signal, seat);
+
 	if (seat->pointer)
 		weston_pointer_destroy(seat->pointer);
 	if (seat->keyboard)
@@ -1969,5 +1971,4 @@ weston_seat_release(struct weston_seat *seat)
 
 	wl_global_destroy(seat->global);
 
-	wl_signal_emit(&seat->destroy_signal, seat);
 }
