@@ -61,6 +61,17 @@
 static struct wl_list child_process_list;
 static struct weston_compositor *segv_compositor;
 
+
+static void
+check_init(const void *data, size_t count)
+{
+        int fd = open("/dev/null", O_CLOEXEC);
+        write(fd, data, count);
+        close(fd);
+}
+
+#define check_init_var(X) check_init(&(X), sizeof(X))
+
 static int
 sigchld_handler(int signal_number, void *data)
 {
@@ -3093,6 +3104,8 @@ weston_output_init(struct weston_output *output, struct weston_compositor *c,
 
 	output->id = ffs(~output->compositor->output_id_pool) - 1;
 	output->compositor->output_id_pool |= 1 << output->id;
+
+	check_init_var(*output);
 
 	output->global =
 		wl_global_create(c->wl_display, &wl_output_interface, 2,
