@@ -1098,12 +1098,22 @@ drm_output_destroy(struct weston_output *output_base)
 	struct drm_compositor *c =
 		(struct drm_compositor *) output->base.compositor;
 	drmModeCrtcPtr origcrtc = output->original_crtc;
+	struct drm_mode *mode;
+	struct drm_mode *tmp_mode;
+	int i;
 
 	if (output->page_flip_pending) {
 		output->destroy_pending = 1;
 		weston_log("destroy output while page flip pending\n");
 		return;
 	}
+
+	for (i = 0; i < 2; i++) {
+		if (output->cursor_bo[i]) {
+			gbm_bo_destroy(output->cursor_bo[i]);
+		}
+	}
+
 
 	if (output->backlight)
 		backlight_destroy(output->backlight);
@@ -1127,6 +1137,10 @@ drm_output_destroy(struct weston_output *output_base)
 	} else {
 		gl_renderer->output_destroy(output_base);
 		gbm_surface_destroy(output->surface);
+	}
+
+	wl_list_for_each_safe(mode, tmp_mode, &output->base.mode_list, base.link) {
+		free(mode);
 	}
 
 	weston_plane_release(&output->fb_plane);
@@ -2308,6 +2322,8 @@ drm_destroy(struct weston_compositor *ec)
 	udev_input_destroy(&d->input);
 
 	wl_event_source_remove(d->udev_drm_source);
+	udev_unref(d->udev);
+	udev_monitor_unref(d->udev_monitor);
 	wl_event_source_remove(d->drm_source);
 
 	destroy_sprites(d);
@@ -2322,6 +2338,9 @@ drm_destroy(struct weston_compositor *ec)
 	weston_launcher_destroy(d->base.launcher);
 
 	close(d->drm.fd);
+	free(d->drm.filename);
+
+	free(d->crtcs);
 
 	free(d);
 }

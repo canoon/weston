@@ -1742,6 +1742,8 @@ weston_compositor_build_global_keymap(struct weston_compositor *ec)
 	if (ec->xkb_info == NULL)
 		return -1;
 
+	xkb_map_unref(keymap);
+
 	return 0;
 }
 #else

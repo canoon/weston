@@ -4779,6 +4779,9 @@ shell_destroy(struct wl_listener *listener, void *data)
 	if (shell->child.client)
 		wl_client_destroy(shell->child.client);
 
+	if (shell->screensaver.timer)
+		wl_event_source_remove(shell->screensaver.timer);
+
 	wl_list_remove(&shell->idle_listener.link);
 	wl_list_remove(&shell->wake_listener.link);
 	wl_list_remove(&shell->show_input_panel_listener.link);

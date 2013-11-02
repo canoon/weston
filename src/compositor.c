@@ -3803,6 +3803,9 @@ int main(int argc, char *argv[])
 	ec->destroy(ec);
 	wl_display_destroy(display);
 
+	free(modules);
+	free(shell);
+
 	weston_log_file_close();
 
 	return ret;
