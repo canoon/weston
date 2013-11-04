@@ -2863,6 +2863,9 @@ terminal_destroy(struct terminal *terminal)
 	if (wl_list_empty(&terminal_list))
 		display_exit(terminal->display);
 
+	free(terminal->data);
+	free(terminal->data_attr);
+	free(terminal->tab_ruler);
 	free(terminal->title);
 	free(terminal);
 }
@@ -2959,6 +2962,8 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 
 	display_run(d);
+
+	display_destroy(d);
 
 	return 0;
 }
